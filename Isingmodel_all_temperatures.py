@@ -70,7 +70,7 @@ def Glauber(lx, ly, kT, spin, model):
 
             #calculate and save data every 10 sweeps
             
-            M = np.sum(spin)
+            M = abs(np.sum(spin))
             magnetisation.append(M)
             energies.append(E_initial)
 
@@ -104,7 +104,7 @@ def Glauber(lx, ly, kT, spin, model):
     mag_array = np.asarray(magnetisation)
     eng_array = np.asarray(energies)
 
-    mag = abs(np.mean(magnetisation))
+    mag = np.mean(magnetisation)
     sus = (1/((lx*ly)*kT))*np.var(mag_array)
     eng = np.mean(energies)
     shc = (1/((lx*ly)*(kT**2)))*np.var(eng_array)
@@ -121,7 +121,7 @@ def Glauber(lx, ly, kT, spin, model):
 
 def Kawasaki(lx, ly, kT, spin, model):
     J=1.0
-    nstep=10100
+    nstep=5000
     sweeps = 0
 
     """
@@ -164,6 +164,8 @@ def Kawasaki(lx, ly, kT, spin, model):
                 itrial2 = np.random.randint(0,lx)
                 jtrial2 = np.random.randint(0,ly)
 
+            spin2 = spin[itrial2,jtrial2]
+
             #if spins are the same, energy change is zero
             if spin1 == spin2:
                 continue
@@ -174,27 +176,35 @@ def Kawasaki(lx, ly, kT, spin, model):
                 Glauber_2 = 2*J*spin[itrial2,jtrial2]*(spin[(itrial2+1)%lx,jtrial2] + spin[(itrial2-1)%lx,jtrial2] + spin[itrial2,(jtrial2+1)%lx] + spin[itrial2,(jtrial2-1)%lx])
                 delta_E = Glauber_1 + Glauber_2
 
-                if (itrial1 == itrial2 & (jtrial1 == (jtrial2 - 1)%lx or jtrial1 == (jtrial2 + 1)%lx)) or (jtrial1 ==  jtrial2 & (itrial1 == (itrial2 - 1)%lx or itrial1 == (itrial2 + 1)%lx)):
+                if (itrial1 == itrial2) & (jtrial1 == (jtrial2 - 1)%lx):
+                    delta_E += 4
+                if (itrial1 == itrial2) & (jtrial1 == (jtrial2 + 1)%lx):
+                    delta_E += 4
+                if (jtrial1 ==  jtrial2) & (itrial1 == (itrial2 - 1)%lx):
+                    delta_E += 4
+                if (jtrial1 ==  jtrial2) & (itrial1 == (itrial2 + 1)%lx):
                     delta_E += 4
 
         #perform metropolis test
 
-            if delta_E <= 0 or random.random() <= math.exp(-1*delta_E/kT):
-                #swap spins (this is the same as changing the sign)                                
-                spin[itrial1,jtrial1] *= -1
-                spin[itrial2,jtrial2] *= -1
-            else:
-                delta_E = 0
+                if delta_E <= 0 or random.random() <= math.exp(-1*delta_E/kT):
+                    #swap spins (this is the same as changing the sign)                                
+                    spin[itrial1,jtrial1] *= -1
+                    spin[itrial2,jtrial2] *= -1
+                    
+                else:
+                    delta_E = 0
+                
+                # update initial energy
+                E_initial += delta_E
 
-            # update initial energy
-            E_initial += delta_E
 
         #occasionally plot or update measurements, eg every 10 sweeps
         if(n%10==0): 
 
             #calculate and save data every 10 sweeps
                 
-            M = np.sum(spin)
+            M = abs(np.sum(spin))
             magnetisation.append(M)
             energies.append(E_initial)
 
@@ -226,7 +236,7 @@ def Kawasaki(lx, ly, kT, spin, model):
     mag_array = np.asarray(magnetisation)
     eng_array = np.asarray(energies)
 
-    mag = abs(np.mean(magnetisation))
+    mag = np.mean(magnetisation)
     sus = (1/((lx*ly)*kT))*np.var(mag_array)
     eng = np.mean(energies)
     shc = (1/((lx*ly)*(kT**2)))*np.var(eng_array)
@@ -243,7 +253,7 @@ def Kawasaki(lx, ly, kT, spin, model):
 
 def bootstrap(magnetisation, energy, lx, ly, kT):
     L = len(energy)
-    nsubsets = 6
+    nsubsets = 10
 
     shc_subset  = []
     sus_subset = []
@@ -283,7 +293,7 @@ def main():
 
         for i in range (len(T_range)):
             updated_spin = Glauber(lx, ly, temperatures[i], spin, model)
-            spin = updated_spin
+            spin = np.copy(updated_spin)
     
     elif model == "Kawasaki":
     #initialise spins randomly, discard first 100 sweeps
@@ -292,6 +302,6 @@ def main():
         for i in range (len(T_range)):
             updated_spin = Kawasaki(lx, ly, temperatures[i], spin, model)
             print("Prog")
-            spin = updated_spin
+            spin = np.copy(updated_spin)
 
 main()
