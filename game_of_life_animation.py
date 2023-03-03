@@ -1,3 +1,4 @@
+
 import matplotlib
 matplotlib.use('TKAgg')
 
@@ -12,16 +13,33 @@ import time
 
 def writefile(lx, initial):
     outfile = f"{initial}_Size{lx}.csv"
-    header = ['Run', 'Active Sites', 'Time', 'Sweeps']
+    header = ['Run', 'Time', 'Sweeps']
     with open(outfile, "w", newline='') as f:
         writer = csv.writer(f)
         writer.writerow(header)
 
-def game_of_life(lx, ly, spin, initial, run, nsims):
+def check_eq(grid, n, active_sites):
+    if n < 9:
+       eq = 0
+       active_sites.append(np.sum(grid))
+    elif 9 <= n < 5000:
+        eq = 0
+        active_sites.append(np.sum(grid))
+        check_arr = np.array(active_sites[n-9:n])
+        if np.max(check_arr) == np.min(check_arr):
+            eq = 1
+        else:
+            pass
+    
+    elif n == 5000:
+        eq = -1  
+    
+    return eq
 
+def game_of_life(lx, ly, spin, initial, run, nsims):
     start_time = time.time()
 
-    nstep=10000 #discard first 100 sweeps
+    nstep=5000 
     sweeps=0
     
     """
@@ -30,11 +48,25 @@ def game_of_life(lx, ly, spin, initial, run, nsims):
     """
 
     #update loop here - for game of life
-
+    active_sites = []
     for n in range(nstep):
         copy = np.copy(spin)
-        active_sites = np.sum(copy)
         
+        eq = check_eq(copy, n, active_sites)
+        if eq == 1: #break if in equlibrium
+            outfile = f"{initial}_Size{lx}.csv"
+            data = [run, np.round(time_passed, 2), sweeps]
+            with open(outfile, "a", newline='') as f:
+                writer = csv.writer(f)
+                writer.writerow(data)
+            break
+        if eq == -1: #eq never reached
+            outfile = f"{initial}_Size{lx}.csv"
+            data = [run, np.round(time_passed, 2), sweeps]
+            with open(outfile, "a", newline='') as f:
+                writer = csv.writer(f)
+                writer.writerow(data)
+                
         for i in range(lx):
             for j in range(ly):
                 #check neighbours
@@ -59,18 +91,13 @@ def game_of_life(lx, ly, spin, initial, run, nsims):
                 else:
                     if sum_neighbours == 3:
                         copy[i,j] = 1
+            
         
         spin = np.copy(copy)
         end_time = time.time()
         time_passed = end_time - start_time 
         
         if (n%1==0):
-    
-            outfile = f"{initial}_Size{lx}.csv"
-            data = [run, active_sites, np.round(time_passed, 2), sweeps]
-            with open(outfile, "a", newline='') as f:
-                writer = csv.writer(f)
-                writer.writerow(data)
         
             """
             #show animation
