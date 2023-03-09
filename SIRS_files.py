@@ -107,7 +107,7 @@ def main():
     p2 = 0.5
     p3_arr = np.arange(0, 1.05, 0.05)
 
-    size = len(p1)
+    size = len(p1_arr)
     
     lattice = np.zeros([size, size])
     var_lattice = np.zeros([size, size])
