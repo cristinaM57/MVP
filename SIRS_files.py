@@ -9,6 +9,20 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import pandas as pd
 
+def bootstrap(infected_array, lx, ly):
+    L = len(infected_array)
+    nsubsets = 100
+
+    infected_variances  = []
+
+    for i in range(nsubsets):
+        indices = np.random.choice(L, int(L))
+        subset_infected = infected_array[indices]
+
+        infected_variances.append(np.var(subset_infected)/(lx*ly))
+
+    return np.std(infected_variances)
+
 def SIRS_phases(lx, ly, p1, p2, p3, spin):
 
     nstep=1100 #discard first 100 sweeps
@@ -86,7 +100,7 @@ def SIRS_phases(lx, ly, p1, p2, p3, spin):
 
     inf_array = np.asarray(infected)
     inf_avg = np.mean(infected)
-    inf_var = np.var(inf_array)
+    inf_var = np.var(inf_array)/(lx*ly)
     inf_frac = inf_avg/(lx*ly) 
 
     return inf_frac, inf_var
@@ -168,36 +182,16 @@ def SIRS_var(lx, ly, p1, p2, p3, spin):
 
     inf_array = np.asarray(infected)
     inf_avg = np.mean(infected)
-    inf_var = np.var(inf_array)
+    inf_var = np.var(inf_array)/(lx*ly)
     inf_frac = inf_avg/(lx*ly) 
 
-    return inf_frac, inf_var
+    var_err = bootstrap(inf_array, lx, ly)
 
-def bootstrap(magnetisation, energy, lx, ly, kT):
-    L = len(energy)
-    nsubsets = 10
-
-    shc_subset  = []
-    sus_subset = []
-
-    for i in range(nsubsets):
-        indices = np.random.choice(L, int(L))
-        eng_subset = energy[indices]
-        mag_subset = magnetisation[indices]
-
-        sus_subset.append((1/((lx*ly)*kT))*np.var(mag_subset))
-        shc_subset.append((1/((lx*ly)*(kT**2)))*np.var(eng_subset))
-
-    return np.std(magnetisation), np.std(sus_subset), np.std(energy), np.std(shc_subset)
-
+    return inf_frac, inf_var, var_err
 
 def main():
     
     #input
-
-    if(len(sys.argv) != 3):
-        print ("Usage python ising.animation.py N calc")
-        sys.exit()
 
     lx=int(sys.argv[1]) 
     ly=lx
@@ -230,7 +224,7 @@ def main():
 
     elif calc == "variance":
 
-        p1_arr = np.arange(0, 1.05, 0.05)
+        p1_arr = np.arange(0.2, 0.51, 0.01)
         p2 = 0.5
         p3 = 0.5
 
@@ -238,20 +232,24 @@ def main():
         
         average_fraction = []
         var_1D = []
+        var_err_1D = []
             
         for i in range(size):
             
             spin = np.random.choice([-1, 0, 1], [lx, ly])
             p1 = p1_arr[i]
                 
-            average_fraction.append(SIRS_phases(lx, ly, p1, p2, p3, spin)[0])  
-            var_1D.append(SIRS_phases(lx, ly, p1, p2, p3, spin)[1])
+            #average_fraction.append(SIRS_phases(lx, ly, p1, p2, p3, spin)[0])  
+            var_1D.append(SIRS_var(lx, ly, p1, p2, p3, spin)[1])
+            var_err_1D.append(SIRS_var(lx, ly, p1, p2, p3, spin)[2])
         
         
         #df = pd.DataFrame(data=average_fraction.astype(float))
         #df.to_csv(f'SIRSVAR_size{lx}', sep=' ', header = False, float_format='%.5f', index=False)
-        df1 = pd.DataFrame(data=var_1D.astype(float))
+        df1 = pd.DataFrame(data=var_1D)
         df1.to_csv(f'SIRSVAR_var_size{lx}', sep=' ', header = False, float_format='%.5f', index=False)
+        df2 = pd.DataFrame(data=var_err_1D)
+        df2.to_csv(f'SIRSVAR_var_err_size{lx}', sep=' ', header = False, float_format='%.5f', index=False)
 
 
 main()
