@@ -11,7 +11,7 @@ import pandas as pd
 
 def bootstrap(infected_array, lx, ly):
     L = len(infected_array)
-    nsubsets = 100
+    nsubsets = 1000
 
     infected_variances  = []
 
@@ -105,7 +105,7 @@ def SIRS_phases(lx, ly, p1, p2, p3, spin):
 
 def SIRS_var(lx, ly, p1, p2, p3, spin):
 
-    nstep=10100 #discard first 100 sweeps
+    nstep=10500 #discard first 100 sweeps
     sweeps=0
     infected = []
     
@@ -172,7 +172,7 @@ def SIRS_var(lx, ly, p1, p2, p3, spin):
 
     
     #save measurements to file after 1000 sweeps (disregard first 100)
-    n_del = 100
+    n_del = 500
     del infected[:n_del]
 
     inf_array = np.asarray(infected)
@@ -183,6 +183,28 @@ def SIRS_var(lx, ly, p1, p2, p3, spin):
     var_err = bootstrap(inf_array, lx, ly)
 
     return inf_frac, inf_var, var_err
+
+def immune(spin, lx, ly, per_immune):
+
+    total_people = lx*ly
+    immune_people = int(per_immune*total_people)
+
+    #create lists with 2500 random numbers
+    i_values = np.random.choice(lx, lx*ly)
+    j_values = np.random.choice(ly, lx*ly)
+    
+    count = np.count_nonzero(spin == 2)
+    while count <= immune_people:
+        
+        itrial = np.random.randint(0,lx)
+        jtrial = np.random.randint(0,ly)
+
+        if spin[itrial, jtrial] != 2:
+            spin[itrial, jtrial] = 2
+        
+        count = np.count_nonzero(spin == 2)
+
+    return spin
 
 def main():
     
@@ -245,6 +267,9 @@ def main():
         df1.to_csv(f'SIRSVAR_var_size{lx}', sep=' ', header = False, float_format='%.5f', index=False)
         df2 = pd.DataFrame(data=var_err_1D)
         df2.to_csv(f'SIRSVAR_var_err_size{lx}', sep=' ', header = False, float_format='%.5f', index=False)
-
+    
+    elif calc == "immunity":
+        spin = np.random.choice([-1, 0, 1], [lx, ly])
+        print(immune(spin, lx, ly, 0.05))
 
 main()
