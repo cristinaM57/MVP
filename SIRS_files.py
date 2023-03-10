@@ -37,8 +37,6 @@ def SIRS_phases(lx, ly, p1, p2, p3, spin):
 
     for n in range(nstep):
 
-        I = 0
-
         #create lists with 2500 random numbers
         i_values = np.random.choice(lx, lx*ly)
         j_values = np.random.choice(ly, lx*ly)
@@ -60,7 +58,6 @@ def SIRS_phases(lx, ly, p1, p2, p3, spin):
                     spin[itrial, jtrial] = 0
             
             elif spin[itrial, jtrial] == -1:
-                I += 1
                 x = random.random()
                 #print("p2"+ str(x)) #debug
                 if x <= p2:
@@ -80,6 +77,7 @@ def SIRS_phases(lx, ly, p1, p2, p3, spin):
         if (n%1==0): 
 
             #calculate and save data every sweep
+            I = np.count_nonzero(spin == -1)
             infected.append(I)
             
             """
@@ -118,9 +116,6 @@ def SIRS_var(lx, ly, p1, p2, p3, spin):
     #update loop here - for SIRS
 
     for n in range(nstep):
-
-        I = 0
-
         #create lists with 2500 random numbers
         i_values = np.random.choice(lx, lx*ly)
         j_values = np.random.choice(ly, lx*ly)
@@ -142,7 +137,6 @@ def SIRS_var(lx, ly, p1, p2, p3, spin):
                     spin[itrial, jtrial] = 0
             
             elif spin[itrial, jtrial] == -1:
-                I += 1
                 x = random.random()
                 #print("p2"+ str(x)) #debug
                 if x <= p2:
@@ -162,6 +156,7 @@ def SIRS_var(lx, ly, p1, p2, p3, spin):
         if (n%1==0): 
 
             #calculate and save data every sweep
+            I = np.count_nonzero(spin == -1)
             infected.append(I)
             
             """
